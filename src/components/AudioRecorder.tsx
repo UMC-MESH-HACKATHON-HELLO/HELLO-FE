@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
+import { apiUpload } from '../api/client'
 
-export type RecordingState = 'idle' | 'recording' | 'stopped'
+export type RecordingState = 'idle' | 'recording' | 'stopped' | 'uploading' | 'uploaded' | 'error'
 
 export function useAudioRecorder() {
   const [state, setState] = useState<RecordingState>('idle')
@@ -21,17 +22,29 @@ export function useAudioRecorder() {
         }
       }
 
-      mediaRecorder.onstop = () => {
+      mediaRecorder.onstop = async () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
         setAudioUrl(url)
         stream.getTracks().forEach((track) => track.stop())
+
+        // 서버에 녹음 파일 업로드
+        setState('uploading')
+        try {
+          const filename = `recording-${Date.now()}.webm`
+          await apiUpload('/api/recordings', blob, filename)
+          setState('uploaded')
+        } catch (err) {
+          console.error('녹음 파일 업로드 실패:', err)
+          setState('error')
+        }
       }
 
       mediaRecorder.start()
       setState('recording')
     } catch (err) {
       console.error('마이크 접근 실패:', err)
+      setState('error')
     }
   }
 
