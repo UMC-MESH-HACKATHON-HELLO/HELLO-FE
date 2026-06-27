@@ -91,9 +91,8 @@ function useElapsedTimer(isRunning = false) {
 function TopBar({ role, hide }: { role?: string; hide?: boolean }) {
   if (hide) return null
   return (
-    <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-      <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
-      <span>{role ?? ''}</span>
+    <header className="flex h-[50px] w-[342px] items-center justify-start text-2xl font-bold leading-[1.2] text-[#10251b]">
+      <img src={logoImage} alt={text.appName} className="-ml-2 h-[88px] w-auto" />
     </header>
   )
 }
@@ -237,14 +236,35 @@ function ToggleSwitch({ config }: { config: ToggleConfig }) {
 }
 
 function SegmentedControl() {
+  const [active, setActive] = useState<'waiting' | 'stopped'>('waiting')
+
+  const handleToggle = (value: 'waiting' | 'stopped') => {
+    setActive(value)
+    if (value === 'stopped') {
+      window.location.hash = '#/1'
+    }
+  }
+
   return (
     <div className="mx-auto mt-3 flex h-11 w-60 items-center rounded-3xl border-[1.3px] border-[#cadfca] bg-white shadow-[0_6px_7px_rgba(10,31,18,0.08)]">
-      <div className="flex h-[42px] w-[120px] items-center justify-center rounded-[22px] bg-[#ddf7e8] text-[21.6px] font-bold leading-[1.28] text-[#075d3c]">
+      <button
+        type="button"
+        onClick={() => handleToggle('waiting')}
+        className={`flex h-[42px] w-[120px] items-center justify-center rounded-[22px] text-[21.6px] font-bold leading-[1.28] transition-colors ${
+          active === 'waiting' ? 'bg-[#ddf7e8] text-[#075d3c]' : 'bg-white text-[#10251a]'
+        }`}
+      >
         {text.waiting}
-      </div>
-      <div className="flex h-[42px] w-[120px] items-center justify-center rounded-[22px] bg-white text-[21.6px] font-bold leading-[1.28] text-[#10251a]">
+      </button>
+      <button
+        type="button"
+        onClick={() => handleToggle('stopped')}
+        className={`flex h-[42px] w-[120px] items-center justify-center rounded-[22px] text-[21.6px] font-bold leading-[1.28] transition-colors ${
+          active === 'stopped' ? 'bg-[#ddf7e8] text-[#075d3c]' : 'bg-white text-[#10251a]'
+        }`}
+      >
         {text.stopped}
-      </div>
+      </button>
     </div>
   )
 }

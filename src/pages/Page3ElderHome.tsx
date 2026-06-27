@@ -20,19 +20,18 @@ export function Page3ElderHome() {
       className="relative h-[844px] w-[390px] overflow-hidden rounded-[38px] border-[1.4px] border-[#cadfca] bg-[#fffffc] px-6 py-6 text-center shadow-[0_20px_38px_-8px_rgba(10,31,18,0.18)]"
     >
       {/* Top Bar */}
-      <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-        <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
-        <span>{text.elder}</span>
+      <header className="flex h-[50px] w-[342px] items-center justify-start text-2xl font-bold leading-[1.2] text-[#10251b]">
+        <img src={logoImage} alt={text.appName} className="-ml-2 h-[88px] w-auto" />
       </header>
 
       <div className="h-[92px]" />
 
       {/* Heading */}
-      <h1 className="mx-auto w-[342px] text-[38.4px] font-bold leading-[1.28] text-[#071b11]">
+      <h1 className="mx-auto w-[342px] text-[36px] font-bold leading-[1.3] text-[#071b11]">
         도움이 필요하신가요?
       </h1>
 
-      <p className="mx-auto mt-3 w-[342px] text-[21.6px] font-bold leading-[1.28] text-[#075d3c]">
+      <p className="mx-auto mt-4 w-[342px] text-[20px] font-bold leading-[1.4] text-[#075d3c]">
         버튼을 누르면 대기 중인 도우미와 연결돼요
       </p>
 
@@ -48,7 +47,7 @@ export function Page3ElderHome() {
       </div>
 
       {/* Footnote */}
-      <p className="mx-auto mt-8 w-[342px] text-[21.6px] font-bold leading-[1.28] text-[#10251a]">
+      <p className="mx-auto mt-8 w-[342px] text-[24px] font-bold leading-[1.4] text-[#10251a]">
         응급 상황은 119에 먼저 연락하세요
       </p>
 

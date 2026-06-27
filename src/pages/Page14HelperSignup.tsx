@@ -50,9 +50,8 @@ export function Page14HelperSignup() {
       aria-label="HE401 도우미 회원가입"
       className="h-[844px] w-[390px] overflow-hidden rounded-[38px] border-[1.4px] border-[#cadfca] bg-[#fffffc] px-6 py-6 text-center shadow-[0_20px_38px_-8px_rgba(10,31,18,0.18)]"
     >
-      <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-        <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
-        <span>회원가입</span>
+      <header className="flex h-[50px] w-[342px] items-center justify-start text-2xl font-bold leading-[1.2] text-[#10251b]">
+        <img src={logoImage} alt={text.appName} className="-ml-2 h-[88px] w-auto" />
       </header>
 
       <div className="h-[24px]" />
