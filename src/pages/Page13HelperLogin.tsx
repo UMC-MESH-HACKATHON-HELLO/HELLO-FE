@@ -3,7 +3,7 @@ import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import { text } from './pageTypes'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '')
 
 export function Page13HelperLogin() {
   const [username, setUsername] = useState('')
@@ -39,9 +39,8 @@ export function Page13HelperLogin() {
       aria-label="HE301 도우미 로그인"
       className="h-[844px] w-[390px] overflow-hidden rounded-[38px] border-[1.4px] border-[#cadfca] bg-[#fffffc] px-6 py-6 text-center shadow-[0_20px_38px_-8px_rgba(10,31,18,0.18)]"
     >
-      <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-        <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
-        <span>도우미 로그인</span>
+      <header className="flex h-[50px] w-[342px] items-center justify-start text-2xl font-bold leading-[1.2] text-[#10251b]">
+        <img src={logoImage} alt={text.appName} className="-ml-2 h-[88px] w-auto" />
       </header>
 
       <div className="h-[28px]" />

@@ -2,7 +2,7 @@ import { Client } from '@stomp/stompjs'
 import type { IMessage } from '@stomp/stompjs'
 import SockJS from 'sockjs-client'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '')
 
 export type SignalType = 'WAITING' | 'NO_HELPER' | 'MATCHED' | 'PARTNER_DISCONNECTED' | 'ENDED'
 
