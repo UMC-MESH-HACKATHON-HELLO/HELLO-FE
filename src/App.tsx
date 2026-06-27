@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
+import microphoneIcon from './assets/free-icon-microphone-black-shape-25682.png'
 
 type ButtonTone = 'primary' | 'helper' | 'secondary' | 'danger'
 type IllustrationType = 'permission' | 'loader' | 'empty' | 'avatar'
@@ -348,8 +349,15 @@ function SegmentedControl() {
 function Illustration({ type, label }: { type: IllustrationType; label?: string }) {
   if (type === 'permission') {
     return (
-      <div className="mx-auto flex h-[108px] w-[260px] items-center justify-center rounded-[18px] border-[1.4px] border-[#cadfca] bg-[#f0faf2] text-[21.6px] leading-[1.28]">
-        {'\uAD8C\uD55C \uC548\uB0B4 \uADF8\uB9BC'}
+      <div className="mx-auto flex h-[108px] w-[260px] items-center justify-center">
+        <div
+          aria-label="\uB9C8\uC774\uD06C"
+          className="h-[86px] w-[86px] bg-[#075d3c]"
+          style={{
+            WebkitMask: `url(${microphoneIcon}) center / contain no-repeat`,
+            mask: `url(${microphoneIcon}) center / contain no-repeat`,
+          }}
+        />
       </div>
     )
   }
