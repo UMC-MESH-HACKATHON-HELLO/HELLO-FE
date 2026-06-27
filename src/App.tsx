@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import microphoneIcon from './assets/free-icon-microphone-black-shape-25682.png'
 import peopleImage from './assets/people.png'
+import xImage from './assets/X.png'
 
 type ButtonTone = 'primary' | 'helper' | 'secondary' | 'danger'
 type IllustrationType = 'permission' | 'loader' | 'empty' | 'avatar'
@@ -22,6 +23,7 @@ type PageConfig = {
   illustration?: IllustrationType
   avatarLabel?: string
   avatarImage?: boolean
+  emptyImage?: boolean
   heading?: string
   headingLines?: string[]
   subheading?: string
@@ -106,6 +108,7 @@ const pages: PageConfig[] = [
     role: text.elder,
     topGap: 'h-[81px]',
     illustration: 'empty',
+    emptyImage: true,
     headingLines: [
       '\uC9C0\uAE08\uC740 \uB300\uAE30 \uC911\uC778',
       '\uB3C4\uC6B0\uBBF8\uAC00 \uC5C6\uC5B4\uC694',
@@ -139,6 +142,7 @@ const pages: PageConfig[] = [
     role: text.elder,
     topGap: 'h-[80px]',
     illustration: 'avatar',
+    avatarImage: true,
     heading: '\uD1B5\uD654\uAC00 \uB05D\uB0AC\uC5B4\uC694',
     subheading: '\uB3C4\uC6C0\uC774 \uB418\uC5C8\uAE38 \uBC14\uB77C\uC694',
     buttons: [{ label: '\uD648\uC73C\uB85C', tone: 'primary', width: 'w-[208px]', height: 'h-[132px]' }],
@@ -232,7 +236,12 @@ function ProductionPage({ page }: { page: PageConfig }) {
       <TopBar role={page.role} />
       <div className={page.topGap} />
       {page.illustration && (
-        <Illustration type={page.illustration} label={page.avatarLabel} usePeopleImage={page.avatarImage} />
+        <Illustration
+          type={page.illustration}
+          label={page.avatarLabel}
+          usePeopleImage={page.avatarImage}
+          useEmptyImage={page.emptyImage}
+        />
       )}
       {page.illustration && <div className="h-[22px]" />}
       <Heading page={page} />
@@ -356,10 +365,12 @@ function Illustration({
   type,
   label,
   usePeopleImage = false,
+  useEmptyImage = false,
 }: {
   type: IllustrationType
   label?: string
   usePeopleImage?: boolean
+  useEmptyImage?: boolean
 }) {
   if (type === 'permission') {
     return (
@@ -383,7 +394,11 @@ function Illustration({
   }
 
   if (type === 'empty') {
-    return <div className="mx-auto h-[86px] w-[86px] rounded-full border border-[#f05e58] bg-[#fff3f0]" />
+    return (
+      <div className="mx-auto h-[86px] w-[86px] overflow-hidden rounded-full bg-[#fff3f0]">
+        {useEmptyImage && <img src={xImage} alt="" className="h-full w-full object-cover" />}
+      </div>
+    )
   }
 
   return (
