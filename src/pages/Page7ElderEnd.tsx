@@ -12,7 +12,7 @@ const page: PageConfig = {
   avatarImage: true,
   heading: '\uD1B5\uD654\uAC00 \uB05D\uB0AC\uC5B4\uC694',
   subheading: '\uB3C4\uC6C0\uC774 \uB418\uC5C8\uAE38 \uBC14\uB77C\uC694',
-  buttons: [{ label: '\uD648\uC73C\uB85C', tone: 'primary', width: 'w-[208px]', height: 'h-[132px]' }],
+  buttons: [{ label: '홈으로', tone: 'primary', width: 'w-[208px]', height: 'h-[132px]', onClick: () => { window.location.hash = '#/1' } }],
 }
 
 export function Page7ElderEnd() {

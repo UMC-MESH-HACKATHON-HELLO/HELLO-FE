@@ -16,7 +16,7 @@ const page: PageConfig = {
   subheadingTone: 'green',
   runningTimer: true,
   status: '\uB9C8\uC774\uD06C \uCF1C\uC9D0',
-  buttons: [{ label: '\uD1B5\uD654 \uC885\uB8CC', tone: 'danger', width: 'w-[248px]', height: 'h-[140px]' }],
+  buttons: [{ label: '통화 종료', tone: 'danger', width: 'w-[248px]', height: 'h-[140px]', onClick: () => { window.location.hash = '#/15' } }],
 }
 
 export function Page6ElderCall() {

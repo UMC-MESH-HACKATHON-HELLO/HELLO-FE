@@ -12,7 +12,7 @@ const page: PageConfig = {
   heading: '\uB3C4\uC6B0\uBBF8\uB97C \uCC3E\uACE0 \uC788\uC5B4\uC694\u2026',
   subheading: '\uC7A0\uC2DC\uB9CC \uAE30\uB2E4\uB824 \uC8FC\uC138\uC694',
   runningTimer: true,
-  buttons: [{ label: '\uCDE8\uC18C', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]' }],
+  buttons: [{ label: '취소', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]', onClick: () => { window.location.hash = '#/3' } }],
 }
 
 export function Page4Matching() {

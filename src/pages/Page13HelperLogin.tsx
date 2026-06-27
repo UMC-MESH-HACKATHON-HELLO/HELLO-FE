@@ -86,6 +86,16 @@ export function Page13HelperLogin() {
         <br />
         회원가입 후 바로 도우미로 활동할 수 있어요
       </p>
+
+      <div className="h-[16px]" />
+
+      <button
+        type="button"
+        onClick={() => { window.location.hash = '#/1' }}
+        className="mx-auto flex h-[44px] w-[184px] items-center justify-center rounded-[16px] border-2 border-[#cadfca] bg-white text-[18px] font-bold text-[#10251a] transition-transform hover:-translate-y-0.5"
+      >
+        홈으로
+      </button>
     </section>
   )
 }

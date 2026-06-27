@@ -86,6 +86,7 @@ export function Page15ElderReview() {
       {/* Submit Button */}
       <button
         type="button"
+        onClick={() => { window.location.hash = '#/7' }}
         className="mx-auto flex h-[56px] w-[312px] items-center justify-center rounded-[16px] border-2 border-[#087349] bg-[#ddf7e8] text-[20px] font-bold text-[#075d3c] transition-transform hover:-translate-y-0.5 disabled:opacity-50"
         disabled={rating === 0}
       >
@@ -94,6 +95,7 @@ export function Page15ElderReview() {
 
       <button
         type="button"
+        onClick={() => { window.location.hash = '#/7' }}
         className="mx-auto mt-3 flex h-[44px] w-[312px] items-center justify-center text-[16px] font-medium text-[#10251a] underline underline-offset-2"
       >
         건너뛰기
