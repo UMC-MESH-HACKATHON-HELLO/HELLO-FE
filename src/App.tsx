@@ -24,6 +24,7 @@ type PageConfig = {
   subheading?: string
   subheadingTone?: 'default' | 'green'
   timer?: string
+  runningTimer?: boolean
   status?: string
   point?: string
   segment?: boolean
@@ -123,7 +124,7 @@ const pages: PageConfig[] = [
     heading: text.helper,
     subheading: '\uC5F0\uACB0\uB410\uC5B4\uC694 \u00B7 \uB9D0\uC500\uD558\uC138\uC694',
     subheadingTone: 'green',
-    timer: '00:42',
+    runningTimer: true,
     status: '\uB9C8\uC774\uD06C \uCF1C\uC9D0',
     buttons: [{ label: '\uD1B5\uD654 \uC885\uB8CC', tone: 'danger', width: 'w-[248px]', height: 'h-[140px]' }],
   },
@@ -172,7 +173,7 @@ const pages: PageConfig[] = [
     illustration: 'avatar',
     avatarLabel: text.elder,
     heading: text.elder,
-    timer: '00:42',
+    runningTimer: true,
     status: '\uB9C8\uC774\uD06C \uCF1C\uC9D0',
     buttons: [{ label: '\uD1B5\uD654 \uC885\uB8CC', tone: 'danger', width: 'w-[248px]', height: 'h-[140px]' }],
   },
@@ -216,6 +217,8 @@ function getCurrentPath() {
 }
 
 function ProductionPage({ page }: { page: PageConfig }) {
+  const elapsedTime = useElapsedTimer(page.runningTimer)
+
   return (
     <section
       aria-label={`${page.code} ${page.title}`}
@@ -237,7 +240,11 @@ function ProductionPage({ page }: { page: PageConfig }) {
       )}
       {page.point && <p className="mt-3 text-2xl font-bold leading-[1.28] text-[#10251a]">{page.point}</p>}
       {page.segment && <SegmentedControl />}
-      {page.timer && <p className="mt-1 text-[62.4px] font-bold leading-[1.28] text-[#071b11]">{page.timer}</p>}
+      {(page.timer || page.runningTimer) && (
+        <p className="mt-1 text-[62.4px] font-bold leading-[1.28] text-[#071b11]">
+          {page.runningTimer ? elapsedTime : page.timer}
+        </p>
+      )}
       {page.status && (
         <p className="mx-auto mt-3 w-[342px] text-[21.6px] font-bold leading-[1.28] text-[#075d3c]">
           {page.status}
@@ -257,6 +264,29 @@ function ProductionPage({ page }: { page: PageConfig }) {
       )}
     </section>
   )
+}
+
+function useElapsedTimer(isRunning = false) {
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    if (!isRunning) {
+      return
+    }
+
+    setElapsedSeconds(0)
+    const startedAt = Date.now()
+    const intervalId = window.setInterval(() => {
+      setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000))
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [isRunning])
+
+  const minutes = Math.floor(elapsedSeconds / 60)
+  const seconds = elapsedSeconds % 60
+
+  return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
 function TopBar({ role }: { role?: string }) {
