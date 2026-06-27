@@ -5,6 +5,7 @@ import { Page13HelperLogin } from './Page13HelperLogin'
 import { Page14HelperSignup } from './Page14HelperSignup'
 import { Page15ElderReview } from './Page15ElderReview'
 import { Page1RoleSelect } from './Page1RoleSelect'
+import { Page2HelperMicReady } from './Page2HelperMicReady'
 import { Page2MicReady } from './Page2MicReady'
 import { Page3ElderHome } from './Page3ElderHome'
 import { Page4Matching } from './Page4Matching'
@@ -18,6 +19,7 @@ import type { PageRoute } from './pageTypes'
 export const pages: PageRoute[] = [
   { path: '/1', Component: Page1RoleSelect },
   { path: '/2', Component: Page2MicReady },
+  { path: '/2-helper', Component: Page2HelperMicReady },
   { path: '/3', Component: Page3ElderHome },
   { path: '/4', Component: Page4Matching },
   { path: '/5', Component: Page5NoHelper },
