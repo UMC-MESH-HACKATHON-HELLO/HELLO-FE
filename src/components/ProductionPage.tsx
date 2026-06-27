@@ -56,7 +56,7 @@ export function ProductionPage({ page }: { page: PageConfig }) {
         </div>
       )}
       {page.footnote && (
-        <p className="mx-auto mt-8 w-[342px] text-[21.6px] font-bold leading-[1.28] text-[#10251a]">
+        <p className={`mx-auto mt-8 w-[342px] text-[21.6px] font-bold leading-[1.28] text-[#10251a] ${page.footnoteBlink ? 'animate-pulse' : ''}`}>
           {page.footnote}
         </p>
       )}

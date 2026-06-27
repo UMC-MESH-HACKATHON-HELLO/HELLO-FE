@@ -34,11 +34,13 @@ export type PageConfig = {
   timer?: string
   runningTimer?: boolean
   status?: string
+  statusBlink?: boolean
   point?: string
   segment?: boolean
   toggle?: ToggleConfig
   buttons?: ActionButton[]
   footnote?: string
+  footnoteBlink?: boolean
 }
 
 export type PageRoute = {
