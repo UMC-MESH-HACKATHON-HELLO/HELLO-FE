@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import microphoneIcon from '../assets/free-icon-microphone-black-shape-25682.png'
 import peopleImage from '../assets/people.png'
 import xImage from '../assets/X.png'
-import type { ActionButton as ActionButtonConfig, ButtonTone, IllustrationType, PageConfig } from '../pages/pageTypes'
+import type { ActionButton as ActionButtonConfig, ButtonTone, IllustrationType, PageConfig, ToggleConfig } from '../pages/pageTypes'
 import { text } from '../pages/pageTypes'
 
 export function ProductionPage({ page }: { page: PageConfig }) {
@@ -36,6 +36,7 @@ export function ProductionPage({ page }: { page: PageConfig }) {
       )}
       {page.point && <p className="mt-3 text-2xl font-bold leading-[1.28] text-[#10251a]">{page.point}</p>}
       {page.segment && <SegmentedControl />}
+      {page.toggle && <ToggleSwitch config={page.toggle} />}
       {(page.timer || page.runningTimer) && (
         <p className="mt-1 text-[62.4px] font-bold leading-[1.28] text-[#071b11]">
           {page.runningTimer ? elapsedTime : page.timer}
@@ -125,6 +126,37 @@ function ActionButton({ button }: { button: ActionButtonConfig }) {
     >
       {button.label}
     </button>
+  )
+}
+
+function ToggleSwitch({ config }: { config: ToggleConfig }) {
+  const [isOn, setIsOn] = useState(true)
+
+  return (
+    <div className="mx-auto mt-5 flex items-center justify-center gap-4">
+      <span className={`text-[21.6px] font-bold leading-[1.28] ${isOn ? 'text-[#075d3c]' : 'text-[#10251a]/40'}`}>
+        {config.onLabel}
+      </span>
+      <button
+        type="button"
+        role="switch"
+        aria-checked={isOn}
+        aria-label={isOn ? config.onLabel : config.offLabel}
+        onClick={() => setIsOn(!isOn)}
+        className={`relative h-[36px] w-[64px] rounded-full border-2 transition-colors duration-200 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#087349] ${
+          isOn ? 'border-[#087349] bg-[#087349]' : 'border-[#cadfca] bg-[#cadfca]'
+        }`}
+      >
+        <span
+          className={`absolute top-[3px] h-[26px] w-[26px] rounded-full bg-white shadow-md transition-transform duration-200 ${
+            isOn ? 'left-[34px]' : 'left-[3px]'
+          }`}
+        />
+      </button>
+      <span className={`text-[21.6px] font-bold leading-[1.28] ${!isOn ? 'text-[#d94838]' : 'text-[#10251a]/40'}`}>
+        {config.offLabel}
+      </span>
+    </div>
   )
 }
 

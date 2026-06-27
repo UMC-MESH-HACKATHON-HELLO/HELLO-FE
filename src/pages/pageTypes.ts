@@ -10,6 +10,11 @@ export type ActionButton = {
   height?: string
 }
 
+export type ToggleConfig = {
+  onLabel: string
+  offLabel: string
+}
+
 export type PageConfig = {
   path: string
   code: string
@@ -29,6 +34,7 @@ export type PageConfig = {
   status?: string
   point?: string
   segment?: boolean
+  toggle?: ToggleConfig
   buttons?: ActionButton[]
   footnote?: string
 }
