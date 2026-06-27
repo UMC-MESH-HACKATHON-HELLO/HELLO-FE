@@ -13,8 +13,20 @@ export function Page14HelperSignup() {
   const [error, setError] = useState('')
 
   async function handleSignup() {
-    if (!nickname || !username || !password) {
+    if (!nickname || !username || !password || !passwordConfirm) {
       setError('모든 항목을 입력해주세요')
+      return
+    }
+    if (nickname.length < 2 || nickname.length > 10) {
+      setError('이름은 2~10자로 입력해주세요')
+      return
+    }
+    if (username.length < 4 || username.length > 20) {
+      setError('아이디는 4~20자로 입력해주세요')
+      return
+    }
+    if (password.length < 8) {
+      setError('비밀번호는 8자 이상이어야 해요')
       return
     }
     if (password !== passwordConfirm) {

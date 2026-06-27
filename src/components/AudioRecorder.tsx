@@ -22,22 +22,16 @@ export function useAudioRecorder() {
         }
       }
 
-      mediaRecorder.onstop = async () => {
+      mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: 'audio/webm' })
         const url = URL.createObjectURL(blob)
         setAudioUrl(url)
+        setState('stopped')
         stream.getTracks().forEach((track) => track.stop())
 
-        // 서버에 녹음 파일 업로드
-        setState('uploading')
-        try {
-          const filename = `recording-${Date.now()}.webm`
-          await apiUpload('/api/recordings', blob, filename)
-          setState('uploaded')
-        } catch (err) {
-          console.error('녹음 파일 업로드 실패:', err)
-          setState('error')
-        }
+        // TODO: 백엔드 연동 시 업로드 활성화
+        // const filename = `recording-${Date.now()}.webm`
+        // apiUpload('/api/recordings', blob, filename)
       }
 
       mediaRecorder.start()
