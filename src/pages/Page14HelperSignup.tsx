@@ -3,7 +3,7 @@ import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import { text } from './pageTypes'
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL || ''
+const API_BASE = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL || '')
 
 function validate(nickname: string, username: string, password: string, passwordConfirm: string) {
   return {

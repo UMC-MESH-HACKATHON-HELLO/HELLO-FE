@@ -1,6 +1,6 @@
 import { getToken } from './session'
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
+const BASE_URL = import.meta.env.DEV ? '' : (import.meta.env.VITE_API_BASE_URL as string)
 
 function authHeaders(): Record<string, string> {
   const token = getToken()
