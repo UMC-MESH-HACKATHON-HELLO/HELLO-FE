@@ -13,10 +13,7 @@ export function Page6ElderCall() {
 
   const handleEndCall = () => {
     stopRecording()
-    // 녹음 중지 후 잠시 뒤 페이지 이동 (파일 저장 시간 확보)
-    setTimeout(() => {
-      window.location.hash = '#/15'
-    }, 500)
+    // 녹음 테스트: 페이지 이동 막고 결과 확인용
   }
 
   const page: PageConfig = {
@@ -41,7 +38,7 @@ export function Page6ElderCall() {
   return (
     <div className="relative">
       <ProductionPage page={page} />
-      {state === 'stopped' && audioUrl && (
+      {state !== 'recording' && state !== 'idle' && audioUrl && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
           <AudioPlayback audioUrl={audioUrl} />
         </div>
