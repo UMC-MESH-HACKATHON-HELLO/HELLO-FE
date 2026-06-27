@@ -12,6 +12,7 @@ const page: PageConfig = {
   toggle: {
     onLabel: text.waiting,
     offLabel: text.stopped,
+    offNavigateTo: '/1',
   },
   status: '\u25CF \uC694\uCCAD\uC744 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC5B4\uC694',
   footnote: '\uB300\uAE30 \uC911\uC77C \uB54C\uB9CC \uC694\uCCAD\uC744 \uBC1B\uC544\uC694',

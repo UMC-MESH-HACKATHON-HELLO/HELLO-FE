@@ -14,6 +14,7 @@ export type ActionButton = {
 export type ToggleConfig = {
   onLabel: string
   offLabel: string
+  offNavigateTo?: string
 }
 
 export type PageConfig = {

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import microphoneIcon from '../assets/free-icon-microphone-black-shape-25682.png'
 import peopleImage from '../assets/people.png'
 import xImage from '../assets/X.png'
@@ -132,32 +133,86 @@ function ActionButton({ button }: { button: ActionButtonConfig }) {
 
 function ToggleSwitch({ config }: { config: ToggleConfig }) {
   const [isOn, setIsOn] = useState(true)
+  const [showModal, setShowModal] = useState(false)
+
+  const handleToggle = () => {
+    if (isOn) {
+      // 토글을 OFF로 시각적 전환 + 모달 표시
+      setIsOn(false)
+      setShowModal(true)
+    } else {
+      setIsOn(true)
+    }
+  }
+
+  const handleConfirm = () => {
+    setShowModal(false)
+  }
+
+  const handleCancel = () => {
+    // 아니오 → 토글을 다시 ON으로 복원
+    setShowModal(false)
+    setIsOn(true)
+  }
 
   return (
-    <div className="mx-auto mt-5 flex items-center justify-center gap-4">
-      <span className={`text-[21.6px] font-bold leading-[1.28] ${isOn ? 'text-[#075d3c]' : 'text-[#10251a]/40'}`}>
-        {config.onLabel}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={isOn}
-        aria-label={isOn ? config.onLabel : config.offLabel}
-        onClick={() => setIsOn(!isOn)}
-        className={`relative h-[36px] w-[64px] rounded-full border-2 transition-colors duration-200 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#087349] ${
-          isOn ? 'border-[#087349] bg-[#087349]' : 'border-[#cadfca] bg-[#cadfca]'
-        }`}
-      >
-        <span
-          className={`absolute top-[3px] h-[26px] w-[26px] rounded-full bg-white shadow-md transition-transform duration-200 ${
-            isOn ? 'left-[34px]' : 'left-[3px]'
+    <>
+      <div className="mx-auto mt-5 flex items-center justify-center gap-4">
+        <span className={`text-[21.6px] font-bold leading-[1.28] ${isOn ? 'text-[#075d3c]' : 'text-[#10251a]/40'}`}>
+          {config.onLabel}
+        </span>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={isOn}
+          aria-label={isOn ? config.onLabel : config.offLabel}
+          onClick={handleToggle}
+          className={`relative h-[36px] w-[64px] rounded-full border-2 transition-colors duration-200 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#087349] ${
+            isOn ? 'border-[#087349] bg-[#087349]' : 'border-[#cadfca] bg-[#cadfca]'
           }`}
-        />
-      </button>
-      <span className={`text-[21.6px] font-bold leading-[1.28] ${!isOn ? 'text-[#d94838]' : 'text-[#10251a]/40'}`}>
-        {config.offLabel}
-      </span>
-    </div>
+        >
+          <span
+            className={`absolute top-[3px] h-[26px] w-[26px] rounded-full bg-white shadow-md transition-transform duration-200 ${
+              isOn ? 'left-[34px]' : 'left-[3px]'
+            }`}
+          />
+        </button>
+        <span className={`text-[21.6px] font-bold leading-[1.28] ${!isOn ? 'text-[#d94838]' : 'text-[#10251a]/40'}`}>
+          {config.offLabel}
+        </span>
+      </div>
+
+      {showModal && createPortal(
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div
+            role="alertdialog"
+            aria-labelledby="confirm-title"
+            className="w-[320px] rounded-[24px] border-[1.4px] border-[#cadfca] bg-white px-6 py-8 text-center shadow-[0_20px_38px_-8px_rgba(10,31,18,0.18)]"
+          >
+            <p id="confirm-title" className="text-[24px] font-bold leading-[1.4] text-[#10251a]">
+              {'\uC815\uB9D0 \uC911\uC9C0\uD558\uC2DC\uACA0\uC2B5\uB2C8\uAE4C?'}
+            </p>
+            <div className="mt-6 flex items-center justify-center gap-4">
+              <button
+                type="button"
+                onClick={handleConfirm}
+                className="h-[48px] w-[120px] rounded-[16px] border-2 border-[#d94838] bg-[#d94838] text-[20px] font-bold text-white shadow-[0_6px_7px_rgba(10,31,18,0.08)] transition-transform hover:-translate-y-0.5"
+              >
+                {'\uC608'}
+              </button>
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="h-[48px] w-[120px] rounded-[16px] border-2 border-[#cadfca] bg-white text-[20px] font-bold text-[#10251a] shadow-[0_6px_7px_rgba(10,31,18,0.08)] transition-transform hover:-translate-y-0.5"
+              >
+                {'\uC544\uB2C8\uC624'}
+              </button>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      )}
+    </>
   )
 }
 
