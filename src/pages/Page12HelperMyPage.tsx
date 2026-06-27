@@ -46,7 +46,7 @@ export function Page12HelperMyPage() {
           <div className="flex h-[32px] w-[32px] items-center justify-center rounded-full bg-[#ddf7e8]">
             <span className="text-[16px] font-bold text-[#087349]">🌡</span>
           </div>
-          <span className="mt-1 text-[14px] font-medium text-[#10251a]">도움 온도</span>
+          <span className="mt-1 text-[14px] font-medium text-[#10251a]">도움 지수</span>
           <span className="mt-1 text-[28px] font-bold leading-[1.2] text-[#071b11]">38.5°</span>
         </div>
       </div>

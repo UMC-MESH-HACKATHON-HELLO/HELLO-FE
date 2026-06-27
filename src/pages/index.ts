@@ -3,6 +3,7 @@ import { Page11HelperBackToWaiting } from './Page11HelperBackToWaiting'
 import { Page12HelperMyPage } from './Page12HelperMyPage'
 import { Page13HelperLogin } from './Page13HelperLogin'
 import { Page14HelperSignup } from './Page14HelperSignup'
+import { Page15ElderReview } from './Page15ElderReview'
 import { Page1RoleSelect } from './Page1RoleSelect'
 import { Page2MicReady } from './Page2MicReady'
 import { Page3ElderHome } from './Page3ElderHome'
@@ -29,4 +30,5 @@ export const pages: PageRoute[] = [
   { path: '/12', Component: Page12HelperMyPage },
   { path: '/13', Component: Page13HelperLogin },
   { path: '/14', Component: Page14HelperSignup },
+  { path: '/15', Component: Page15ElderReview },
 ]
