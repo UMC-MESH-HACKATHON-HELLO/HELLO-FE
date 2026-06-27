@@ -1,16 +1,21 @@
-# package.json에 정의된 대로 TypeScript 컴파일 및 Vite 빌드 실행
-# (실행 시 dist 폴더가 생성됩니다)
-RUN npm run build
+FROM node:20-alpine
 
-# 2. 실행 스테이지
-FROM node:18-alpine
 WORKDIR /app
 
-# Caddy와 통신할 내부 포트 개방
+# 캐시 효율을 위해 패키지 명세서 먼저 복사
+COPY package*.json ./
+
+# 의존성 깔끔하게 설치
+RUN npm install
+
+# 전체 소스 코드 복사
+COPY . .
+
+# TypeScript 컴파일 및 Vite 프로덕션 빌드 실행 (dist 폴더 생성)
+RUN npm run build
+
+# Caddy와 통신할 포트 개방
 EXPOSE 3000
 
-# 빌드 결과물 전체를 실행 환경으로 복사
-COPY --from=builder /app /app
-
-# package.json의 preview 스크립트를 활용해 호스트 및 포트(3000)를 강제 지정하여 실행
+# package.json의 preview 스크립트를 이용해 3000 포트로 외부 접속 허용하며 실행
 CMD ["npm", "run", "preview", "--", "--port", "3000", "--host"]
