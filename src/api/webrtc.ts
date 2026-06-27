@@ -1,152 +1,71 @@
-import { on, off, send } from './socket'
+import { Room, RoomEvent, Track, RemoteTrackPublication, RemoteParticipant } from 'livekit-client'
 
-let peerConnection: RTCPeerConnection | null = null
-let localStream: MediaStream | null = null
-let remoteStream: MediaStream | null = null
-let onRemoteStreamCallback: ((stream: MediaStream) => void) | null = null
-let onCallEndedCallback: (() => void) | null = null
+const LIVEKIT_URL = import.meta.env.VITE_LIVEKIT_URL as string || 'wss://hello-f3stxgas.livekit.cloud'
 
-const ICE_SERVERS: RTCIceServer[] = [
-  { urls: 'stun:stun.l.google.com:19302' },
-  { urls: 'stun:stun1.l.google.com:19302' },
-]
+let room: Room | null = null
 
-// 시그널링 메시지 수신 핸들러
-function handleSignalingMessage(data: unknown) {
-  const msg = data as { type: string; sdp?: string; candidate?: RTCIceCandidateInit }
+export type CallStatus = 'idle' | 'connecting' | 'connected' | 'ended'
+type StatusHandler = (status: CallStatus) => void
 
-  if (msg.type === 'offer') {
-    handleOffer(msg.sdp!)
-  } else if (msg.type === 'answer') {
-    handleAnswer(msg.sdp!)
-  } else if (msg.type === 'ice-candidate' && msg.candidate) {
-    handleIceCandidate(msg.candidate)
-  } else if (msg.type === 'call-ended') {
-    endCall()
-    if (onCallEndedCallback) onCallEndedCallback()
-  }
+const statusHandlers = new Set<StatusHandler>()
+
+function notifyStatus(status: CallStatus) {
+  statusHandlers.forEach((h) => h(status))
 }
 
-function createPeerConnection(): RTCPeerConnection {
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS })
-
-  pc.onicecandidate = (event) => {
-    if (event.candidate) {
-      send('signaling', { type: 'ice-candidate', candidate: event.candidate.toJSON() })
-    }
+/**
+ * LiveKit Room에 연결하고 마이크 오디오를 publish한다.
+ * @param token 서버에서 받은 LiveKit JWT 토큰
+ * @param audioElement 상대방 오디오를 재생할 HTMLAudioElement
+ */
+export async function connectToRoom(token: string, audioElement?: HTMLAudioElement | null): Promise<void> {
+  if (room) {
+    await room.disconnect()
   }
 
-  pc.ontrack = (event) => {
-    remoteStream = event.streams[0]
-    if (onRemoteStreamCallback && remoteStream) {
-      onRemoteStreamCallback(remoteStream)
+  room = new Room()
+  notifyStatus('connecting')
+
+  // 상대방 트랙 구독 시 오디오 재생
+  room.on(RoomEvent.TrackSubscribed, (track, _pub: RemoteTrackPublication, _participant: RemoteParticipant) => {
+    if (track.kind === Track.Kind.Audio && audioElement) {
+      track.attach(audioElement)
     }
-  }
-
-  pc.onconnectionstatechange = () => {
-    if (pc.connectionState === 'disconnected' || pc.connectionState === 'failed') {
-      endCall()
-      if (onCallEndedCallback) onCallEndedCallback()
-    }
-  }
-
-  return pc
-}
-
-// 마이크 접근 및 스트림 설정
-async function getLocalStream(): Promise<MediaStream> {
-  if (localStream) return localStream
-  localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false })
-  return localStream
-}
-
-// 통화 시작 (발신 측 - 어르신)
-export async function startCall(): Promise<void> {
-  on('signaling', handleSignalingMessage)
-
-  const stream = await getLocalStream()
-  peerConnection = createPeerConnection()
-
-  stream.getTracks().forEach((track) => {
-    peerConnection!.addTrack(track, stream)
   })
 
-  const offer = await peerConnection.createOffer()
-  await peerConnection.setLocalDescription(offer)
-
-  send('signaling', { type: 'offer', sdp: offer.sdp })
-}
-
-// Offer 수신 처리 (수신 측 - 도우미)
-async function handleOffer(sdp: string): Promise<void> {
-  const stream = await getLocalStream()
-  peerConnection = createPeerConnection()
-
-  stream.getTracks().forEach((track) => {
-    peerConnection!.addTrack(track, stream)
+  room.on(RoomEvent.Connected, () => {
+    notifyStatus('connected')
   })
 
-  await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'offer', sdp }))
+  room.on(RoomEvent.Disconnected, () => {
+    notifyStatus('ended')
+  })
 
-  const answer = await peerConnection.createAnswer()
-  await peerConnection.setLocalDescription(answer)
+  room.on(RoomEvent.ParticipantDisconnected, () => {
+    notifyStatus('ended')
+  })
 
-  send('signaling', { type: 'answer', sdp: answer.sdp })
+  await room.connect(LIVEKIT_URL, token)
+
+  // 마이크 publish
+  await room.localParticipant.setMicrophoneEnabled(true)
 }
 
-// Answer 수신 처리 (발신 측)
-async function handleAnswer(sdp: string): Promise<void> {
-  if (!peerConnection) return
-  await peerConnection.setRemoteDescription(new RTCSessionDescription({ type: 'answer', sdp }))
-}
-
-// ICE candidate 수신 처리
-async function handleIceCandidate(candidate: RTCIceCandidateInit): Promise<void> {
-  if (!peerConnection) return
-  await peerConnection.addIceCandidate(new RTCIceCandidate(candidate))
-}
-
-// 통화 수신 대기 (도우미 측)
-export function waitForCall(): void {
-  on('signaling', handleSignalingMessage)
-}
-
-// 통화 종료
-export function endCall(): void {
-  if (peerConnection) {
-    peerConnection.close()
-    peerConnection = null
+/** 통화 종료 (Room disconnect) */
+export async function disconnectRoom(): Promise<void> {
+  if (room && room.state !== 'disconnected') {
+    await room.disconnect()
   }
-
-  if (localStream) {
-    localStream.getTracks().forEach((track) => track.stop())
-    localStream = null
-  }
-
-  remoteStream = null
-  off('signaling', handleSignalingMessage)
+  room = null
+  notifyStatus('ended')
 }
 
-// 상대방에게 통화 종료 알림
-export function notifyCallEnded(): void {
-  send('signaling', { type: 'call-ended' })
-  endCall()
+/** 상태 변경 구독 */
+export function onCallStatus(handler: StatusHandler): () => void {
+  statusHandlers.add(handler)
+  return () => { statusHandlers.delete(handler) }
 }
 
-// 콜백 등록
-export function onRemoteStream(callback: (stream: MediaStream) => void): void {
-  onRemoteStreamCallback = callback
-}
-
-export function onCallEnded(callback: () => void): void {
-  onCallEndedCallback = callback
-}
-
-// 현재 로컬 스트림 반환 (녹음용)
-export function getCurrentLocalStream(): MediaStream | null {
-  return localStream
-}
-
-export function getRemoteStream(): MediaStream | null {
-  return remoteStream
+export function getRoom(): Room | null {
+  return room
 }

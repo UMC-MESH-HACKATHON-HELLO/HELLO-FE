@@ -1,27 +1,37 @@
-import { useEffect } from 'react'
-import { connect, disconnect, on, off, send } from './socket'
+import { useEffect, useRef } from 'react'
+import { createSession, connect, disconnect, onSignal, sendHelpRequest, sendHelperRegister, sendCallEnd, subscribeRoom, type SignalMessage } from './socket'
 
 /**
- * 소켓 연결을 관리하는 훅.
- * 컴포넌트 마운트 시 연결, 언마운트 시 해제.
+ * STOMP 연결을 관리하는 훅.
+ * 마운트 시 세션 발급 + 연결, 언마운트 시 해제.
  */
-export function useSocketConnect() {
+export function useSocketConnect(role: 'HELPEE' | 'HELPER') {
+  const connectedRef = useRef(false)
+
   useEffect(() => {
-    connect()
-    return () => disconnect()
-  }, [])
+    if (connectedRef.current) return
+    connectedRef.current = true
+
+    createSession(role).then(() => connect()).catch((err) => {
+      console.error('[useSocketConnect] 연결 실패:', err)
+      connectedRef.current = false
+    })
+
+    return () => {
+      disconnect()
+      connectedRef.current = false
+    }
+  }, [role])
 }
 
 /**
- * 특정 소켓 이벤트를 구독하는 훅.
- * @param event - 이벤트 이름 (예: 'match:request')
- * @param handler - 이벤트 핸들러
+ * 개인 시그널 이벤트를 구독하는 훅.
  */
-export function useSocketEvent(event: string, handler: (data: unknown) => void) {
+export function useSignal(handler: (msg: SignalMessage) => void) {
   useEffect(() => {
-    on(event, handler)
-    return () => off(event, handler)
-  }, [event, handler])
+    return onSignal(handler)
+  }, [handler])
 }
 
-export { send }
+export { sendHelpRequest, sendHelperRegister, sendCallEnd, subscribeRoom }
+export type { SignalMessage }

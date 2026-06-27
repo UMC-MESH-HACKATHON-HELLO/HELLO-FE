@@ -1,101 +1,132 @@
-import { getToken } from './session'
+import { Client } from '@stomp/stompjs'
+import type { IMessage } from '@stomp/stompjs'
+import SockJS from 'sockjs-client'
 
-type SocketEventHandler = (data: unknown) => void
+const API_BASE = ''
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL as string
-// http → ws, https → wss
-const WS_URL = BASE_URL.replace(/^http/, 'ws')
+export type SignalType = 'WAITING' | 'NO_HELPER' | 'MATCHED' | 'PARTNER_DISCONNECTED' | 'ENDED'
 
-let socket: WebSocket | null = null
-let reconnectTimer: ReturnType<typeof setTimeout> | null = null
-const listeners = new Map<string, Set<SocketEventHandler>>()
-
-export type SocketEvent =
-  | 'match:request'      // 도우미에게 매칭 요청 도착
-  | 'match:accepted'     // 어르신에게 매칭 수락 알림
-  | 'match:cancelled'    // 매칭 취소
-  | 'call:connected'     // 통화 연결됨
-  | 'call:ended'         // 상대방이 통화 종료
-  | 'helper:status'      // 도우미 상태 변경 확인
-  | 'error'              // 에러
-
-export function connect(): void {
-  if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
-    return
-  }
-
-  const token = getToken()
-  const url = token ? `${WS_URL}/ws?token=${encodeURIComponent(token)}` : `${WS_URL}/ws`
-
-  socket = new WebSocket(url)
-
-  socket.onopen = () => {
-    console.log('[Socket] 연결됨')
-    if (reconnectTimer) {
-      clearTimeout(reconnectTimer)
-      reconnectTimer = null
-    }
-  }
-
-  socket.onmessage = (event) => {
-    try {
-      const message = JSON.parse(event.data as string) as { type: string; data: unknown }
-      const handlers = listeners.get(message.type)
-      if (handlers) {
-        handlers.forEach((handler) => handler(message.data))
-      }
-    } catch (err) {
-      console.error('[Socket] 메시지 파싱 실패:', err)
-    }
-  }
-
-  socket.onclose = (event) => {
-    console.log('[Socket] 연결 끊김:', event.code, event.reason)
-    socket = null
-    // 비정상 종료 시 3초 후 재연결
-    if (event.code !== 1000) {
-      reconnectTimer = setTimeout(() => connect(), 3000)
-    }
-  }
-
-  socket.onerror = (err) => {
-    console.error('[Socket] 에러:', err)
-  }
+export interface SignalMessage {
+  type: SignalType
+  roomId?: string
+  token?: string
 }
 
+type SignalHandler = (msg: SignalMessage) => void
+type RoomHandler = (msg: SignalMessage) => void
+
+let client: Client | null = null
+let sessionId: string | null = null
+const signalHandlers = new Set<SignalHandler>()
+const roomHandlers = new Map<string, Set<RoomHandler>>()
+
+/** POST /api/session으로 익명 세션 발급 */
+export async function createSession(role: 'HELPEE' | 'HELPER'): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/session`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
+    body: JSON.stringify({ role }),
+  })
+  const data = await res.json()
+  sessionId = data.sessionId
+  return sessionId!
+}
+
+/** STOMP over SockJS 연결 */
+export function connect(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (client?.connected) {
+      resolve()
+      return
+    }
+
+    const url = sessionId ? `${API_BASE}/ws?sessionId=${sessionId}` : `${API_BASE}/ws`
+
+    client = new Client({
+      webSocketFactory: () => new SockJS(url),
+      reconnectDelay: 3000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      onConnect: () => {
+        // 개인 메시지 구독
+        client!.subscribe('/user/queue/signal', (message: IMessage) => {
+          const body = JSON.parse(message.body)
+          const signal: SignalMessage = body.result ?? body
+          signalHandlers.forEach((h) => h(signal))
+        })
+        resolve()
+      },
+      onStompError: (frame) => {
+        console.error('[STOMP] 에러:', frame.headers.message)
+        reject(new Error(frame.headers.message))
+      },
+      onDisconnect: () => {
+        console.log('[STOMP] 연결 해제')
+      },
+    })
+
+    client.activate()
+  })
+}
+
+/** 연결 해제 */
 export function disconnect(): void {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer)
-    reconnectTimer = null
+  if (client?.active) {
+    client.deactivate()
   }
-  if (socket) {
-    socket.close(1000, '정상 종료')
-    socket = null
-  }
+  client = null
+  sessionId = null
+  signalHandlers.clear()
+  roomHandlers.clear()
 }
 
-export function send(type: string, data?: unknown): void {
-  if (socket && socket.readyState === WebSocket.OPEN) {
-    socket.send(JSON.stringify({ type, data }))
-  } else {
-    console.warn('[Socket] 연결되지 않은 상태에서 전송 시도:', type)
-  }
+/** 방 토픽 구독 (MATCHED 후 호출) */
+export function subscribeRoom(roomId: string): void {
+  if (!client?.connected) return
+  client.subscribe(`/topic/room/${roomId}`, (message: IMessage) => {
+    const body = JSON.parse(message.body)
+    const signal: SignalMessage = body.result ?? body
+    const handlers = roomHandlers.get(roomId)
+    if (handlers) handlers.forEach((h) => h(signal))
+  })
 }
 
-export function on(event: string, handler: SocketEventHandler): void {
-  if (!listeners.has(event)) {
-    listeners.set(event, new Set())
-  }
-  listeners.get(event)!.add(handler)
+/** 도우미 대기 등록 */
+export function sendHelperRegister(): void {
+  if (!client?.connected) return
+  client.publish({ destination: '/app/help/register', body: '{}' })
 }
 
-export function off(event: string, handler: SocketEventHandler): void {
-  const handlers = listeners.get(event)
-  if (handlers) {
-    handlers.delete(handler)
-  }
+/** 어르신 도움 요청 */
+export function sendHelpRequest(): void {
+  if (!client?.connected) return
+  client.publish({ destination: '/app/help/request', body: '{}' })
+}
+
+/** 통화 종료 */
+export function sendCallEnd(roomId: string): void {
+  if (!client?.connected) return
+  client.publish({ destination: '/app/call/end', body: JSON.stringify({ roomId }) })
+}
+
+/** 개인 시그널 이벤트 구독 */
+export function onSignal(handler: SignalHandler): () => void {
+  signalHandlers.add(handler)
+  return () => { signalHandlers.delete(handler) }
+}
+
+/** 방 이벤트 구독 */
+export function onRoom(roomId: string, handler: RoomHandler): () => void {
+  if (!roomHandlers.has(roomId)) roomHandlers.set(roomId, new Set())
+  roomHandlers.get(roomId)!.add(handler)
+  return () => { roomHandlers.get(roomId)?.delete(handler) }
 }
 
 export function isConnected(): boolean {
-  return socket !== null && socket.readyState === WebSocket.OPEN
+  return client?.connected ?? false
+}
+
+export function getSessionId(): string | null {
+  return sessionId
 }

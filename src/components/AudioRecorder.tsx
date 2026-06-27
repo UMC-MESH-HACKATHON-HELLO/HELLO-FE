@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { apiUpload } from '../api/client'
 
 export type RecordingState = 'idle' | 'recording' | 'stopped' | 'uploading' | 'uploaded' | 'error'
 

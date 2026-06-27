@@ -1,53 +1,44 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { startCall, waitForCall, endCall, notifyCallEnded, onRemoteStream, onCallEnded } from './webrtc'
+import { connectToRoom, disconnectRoom, onCallStatus, type CallStatus } from './webrtc'
+import { sendCallEnd } from './socket'
 
-export type CallState = 'idle' | 'connecting' | 'connected' | 'ended'
+export type CallState = CallStatus
 
 export function useCall() {
   const [callState, setCallState] = useState<CallState>('idle')
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null)
+  const roomIdRef = useRef<string | null>(null)
+  const mountedRef = useRef(false)
 
   useEffect(() => {
-    onRemoteStream((stream) => {
-      setCallState('connected')
-      if (remoteAudioRef.current) {
-        remoteAudioRef.current.srcObject = stream
-        remoteAudioRef.current.play().catch(() => {})
-      }
-    })
+    mountedRef.current = true
+    return () => { mountedRef.current = false }
+  }, [])
 
-    onCallEnded(() => {
-      setCallState('ended')
+  useEffect(() => {
+    return onCallStatus((status) => {
+      if (mountedRef.current) setCallState(status)
     })
+  }, [])
 
-    return () => {
-      endCall()
+  /** MATCHED 시그널을 받은 후 호출 — LiveKit 연결 시작 */
+  const startCall = useCallback(async (token: string, roomId: string) => {
+    roomIdRef.current = roomId
+    await connectToRoom(token, remoteAudioRef.current)
+  }, [])
+
+  /** 통화 종료 */
+  const hangUp = useCallback(async () => {
+    if (roomIdRef.current) {
+      sendCallEnd(roomIdRef.current)
     }
-  }, [])
-
-  // 어르신 측: 통화 시작
-  const initiateCall = useCallback(async () => {
-    setCallState('connecting')
-    await startCall()
-  }, [])
-
-  // 도우미 측: 수신 대기
-  const listenForCall = useCallback(() => {
-    setCallState('connecting')
-    waitForCall()
-  }, [])
-
-  // 통화 종료
-  const hangUp = useCallback(() => {
-    notifyCallEnded()
-    setCallState('ended')
+    await disconnectRoom()
   }, [])
 
   return {
     callState,
     remoteAudioRef,
-    initiateCall,
-    listenForCall,
+    startCall,
     hangUp,
   }
 }

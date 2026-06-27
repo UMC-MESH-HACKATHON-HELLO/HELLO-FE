@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import { text } from './pageTypes'
@@ -6,6 +6,15 @@ import { text } from './pageTypes'
 export function Page15ElderReview() {
   const [rating, setRating] = useState(0)
   const [hoveredRating, setHoveredRating] = useState(0)
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    const url = sessionStorage.getItem('recording_url')
+    if (url) {
+      setRecordingUrl(url)
+      sessionStorage.removeItem('recording_url')
+    }
+  }, [])
 
   const displayRating = hoveredRating || rating
 
@@ -38,6 +47,16 @@ export function Page15ElderReview() {
       </p>
 
       <div className="h-[36px]" />
+
+      {/* 녹음 재생 */}
+      {recordingUrl && (
+        <div className="mx-auto mb-4 w-[312px]">
+          <p className="mb-2 text-[14px] font-medium text-[#10251a]">🎙 통화 녹음 확인</p>
+          <audio controls src={recordingUrl} className="w-full">
+            <track kind="captions" />
+          </audio>
+        </div>
+      )}
 
       {/* Star Rating */}
       <div

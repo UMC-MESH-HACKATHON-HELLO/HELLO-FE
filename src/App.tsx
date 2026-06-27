@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { pages } from './pages'
 
-const HELPER_PATHS = ['/8', '/9', '/10', '/11', '/12']
+const HELPER_PATHS = ['/8', '/12']
 
 function App() {
   const [path, setPath] = useState(getCurrentPath)
