@@ -8,6 +8,7 @@ export type ActionButton = {
   tone?: ButtonTone
   width?: string
   height?: string
+  onClick?: () => void
 }
 
 export type ToggleConfig = {

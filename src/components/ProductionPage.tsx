@@ -122,6 +122,7 @@ function ActionButton({ button }: { button: ActionButtonConfig }) {
   return (
     <button
       type="button"
+      onClick={button.onClick}
       className={`${button.width ?? 'w-[248px]'} ${button.height ?? 'h-[140px]'} rounded-[32px] border-2 px-6 text-[29.6px] font-bold leading-[1.18] shadow-[0_12px_12px_rgba(10,31,18,0.16)] transition-transform hover:-translate-y-0.5 focus-visible:outline-4 focus-visible:outline-offset-4 focus-visible:outline-[#087349] ${toneClass[button.tone ?? 'primary']}`}
     >
       {button.label}
