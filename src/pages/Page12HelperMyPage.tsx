@@ -1,8 +1,21 @@
+import { useEffect, useState } from 'react'
 import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import { text } from './pageTypes'
 
 export function Page12HelperMyPage() {
+  const [nickname, setNickname] = useState('')
+  const [points, setPoints] = useState(0)
+
+  useEffect(() => {
+    fetch('/helper/me', { credentials: 'include' })
+      .then((r) => r.json())
+      .then((data) => {
+        setNickname(data.result?.nickname ?? '')
+        setPoints(data.result?.points ?? 0)
+      })
+      .catch(() => {})
+  }, [])
   return (
     <section
       aria-label="HE201 마이페이지"
@@ -23,7 +36,7 @@ export function Page12HelperMyPage() {
 
       {/* Name & Message */}
       <h1 className="mt-4 text-[32px] font-bold leading-[1.28] text-[#071b11]">
-        김도우 도우미
+        {nickname} 도우미
       </h1>
       <p className="mt-1 text-[18px] font-medium leading-[1.4] text-[#075d3c]">
         오늘도 따뜻한 도움을 전하고 있어요
@@ -39,7 +52,7 @@ export function Page12HelperMyPage() {
             <span className="text-[16px] font-bold text-[#087349]">P</span>
           </div>
           <span className="mt-1 text-[14px] font-medium text-[#10251a]">보유 포인트</span>
-          <span className="mt-1 text-[28px] font-bold leading-[1.2] text-[#071b11]">1,250P</span>
+          <span className="mt-1 text-[28px] font-bold leading-[1.2] text-[#071b11]">{points.toLocaleString()}P</span>
         </div>
 
         {/* 도움 온도 */}
