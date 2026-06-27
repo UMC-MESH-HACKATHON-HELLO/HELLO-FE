@@ -66,6 +66,10 @@ export function Page12HelperMyPage() {
       {/* Logout Button */}
       <button
         type="button"
+        onClick={async () => {
+          try { await fetch('/logout', { method: 'POST', credentials: 'include' }) } catch {}
+          window.location.hash = '#/1'
+        }}
         className="mx-auto flex h-[52px] w-[280px] items-center justify-center rounded-[26px] border-2 border-[#087349] bg-white text-[18px] font-bold text-[#087349] transition-transform hover:-translate-y-0.5"
       >
         <span className="mr-2">↪</span>

@@ -1,0 +1,16 @@
+﻿Status: 200
+Content: {"code":200,"message":"ë¡ê·¸ì¸ì ì±ê³µíìµëë¤.","result":{"userId":3,"nickname":"???2","points":0}}
+Headers:
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 0
+  Pragma: no-cache
+  X-Frame-Options: SAMEORIGIN
+  Keep-Alive: timeout=60
+  Connection: keep-alive
+  Content-Length: 108
+  Cache-Control: no-cache, no-store, max-age=0, must-revalidate
+  Content-Type: application/json
+  Date: Sat, 27 Jun 2026 17:06:51 GMT
+  Expires: 0
+  Set-Cookie: JSESSIONID=CD8E87448B1A3E84E3CD4B88C34F2F54; Path=/; HttpOnly
+
