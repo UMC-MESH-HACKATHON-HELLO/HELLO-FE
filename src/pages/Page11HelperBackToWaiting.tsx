@@ -11,7 +11,8 @@ const page: PageConfig = {
   heading: '\uD1B5\uD654\uAC00 \uB05D\uB0AC\uC5B4\uC694',
   point: '+10P \uC801\uB9BD (2\uCC28)',
   segment: true,
-  status: '\uB2E4\uC2DC \uC694\uCCAD\uC744 \uAE30\uB2E4\uB824\uC694',
+  status: '다시 요청을 기다려요',
+  buttons: [{ label: '홈으로', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]', onClick: () => { window.location.hash = '#/1' } }],
 }
 
 export function Page11HelperBackToWaiting() {

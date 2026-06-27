@@ -12,8 +12,8 @@ const page: PageConfig = {
   heading: '\uB3C4\uC6C0 \uC694\uCCAD\uC774 \uC654\uC5B4\uC694',
   subheading: '\uC5B4\uB974\uC2E0\uC774 \uB3C4\uC6C0\uC744 \uAE30\uB2E4\uB824\uC694',
   buttons: [
-    { label: '\uC218\uB77D\uD558\uACE0 \uD1B5\uD654', tone: 'helper', width: 'w-[292px]', height: 'h-[156px]' },
-    { label: '\uAC70\uC808', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]' },
+    { label: '수락하고 통화', tone: 'helper', width: 'w-[292px]', height: 'h-[156px]', onClick: () => { window.location.hash = '#/10' } },
+    { label: '거절', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]', onClick: () => { window.location.hash = '#/8' } },
   ],
 }
 

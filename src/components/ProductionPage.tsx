@@ -132,13 +132,20 @@ function ActionButton({ button }: { button: ActionButtonConfig }) {
 }
 
 function ToggleSwitch({ config }: { config: ToggleConfig }) {
-  const [isOn, setIsOn] = useState(true)
+  const [isOn, setIsOn] = useState(false)
   const [showModal, setShowModal] = useState(false)
+  const [elapsedSeconds, setElapsedSeconds] = useState(0)
+
+  useEffect(() => {
+    if (!isOn) return
+    const intervalId = window.setInterval(() => {
+      setElapsedSeconds((prev) => prev + 1)
+    }, 1000)
+    return () => window.clearInterval(intervalId)
+  }, [isOn])
 
   const handleToggle = () => {
     if (isOn) {
-      // 토글을 OFF로 시각적 전환 + 모달 표시
-      setIsOn(false)
       setShowModal(true)
     } else {
       setIsOn(true)
@@ -147,13 +154,16 @@ function ToggleSwitch({ config }: { config: ToggleConfig }) {
 
   const handleConfirm = () => {
     setShowModal(false)
+    setIsOn(false)
   }
 
   const handleCancel = () => {
-    // 아니오 → 토글을 다시 ON으로 복원
     setShowModal(false)
-    setIsOn(true)
   }
+
+  const minutes = Math.floor(elapsedSeconds / 60)
+  const seconds = elapsedSeconds % 60
+  const timerDisplay = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 
   return (
     <>
@@ -181,6 +191,10 @@ function ToggleSwitch({ config }: { config: ToggleConfig }) {
           {config.offLabel}
         </span>
       </div>
+
+      <p className="mt-4 text-[62.4px] font-bold leading-[1.28] text-[#071b11]">
+        {timerDisplay}
+      </p>
 
       {showModal && createPortal(
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">

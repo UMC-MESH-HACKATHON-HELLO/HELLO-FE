@@ -14,8 +14,12 @@ const page: PageConfig = {
     offLabel: text.stopped,
     offNavigateTo: '/1',
   },
-  status: '\u25CF \uC694\uCCAD\uC744 \uAE30\uB2E4\uB9AC\uACE0 \uC788\uC5B4\uC694',
-  footnote: '\uB300\uAE30 \uC911\uC77C \uB54C\uB9CC \uC694\uCCAD\uC744 \uBC1B\uC544\uC694',
+  status: '● 요청을 기다리고 있어요',
+  buttons: [
+    { label: '마이페이지', tone: 'primary', width: 'w-[248px]', height: 'h-[116px]', onClick: () => { window.location.hash = '#/12' } },
+    { label: '홈으로', tone: 'secondary', width: 'w-[184px]', height: 'h-[116px]', onClick: () => { window.location.hash = '#/1' } },
+  ],
+  footnote: '대기 중일 때만 요청을 받아요',
 }
 
 export function Page8HelperWaiting() {

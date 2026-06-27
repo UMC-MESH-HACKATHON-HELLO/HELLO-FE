@@ -70,6 +70,16 @@ export function Page12HelperMyPage() {
         <span className="mr-2">↪</span>
         로그아웃
       </button>
+
+      <div className="h-[12px]" />
+
+      <button
+        type="button"
+        onClick={() => { window.location.hash = '#/8' }}
+        className="mx-auto flex h-[44px] w-[184px] items-center justify-center rounded-[16px] border-2 border-[#cadfca] bg-white text-[18px] font-bold text-[#10251a] transition-transform hover:-translate-y-0.5"
+      >
+        이전으로
+      </button>
     </section>
   )
 }

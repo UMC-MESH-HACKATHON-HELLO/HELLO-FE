@@ -58,7 +58,7 @@ export function Page14HelperSignup() {
       {/* Footer */}
       <p className="text-[14px] font-medium text-[#10251a]">
         이미 계정이 있나요?{' '}
-        <button type="button" className="font-bold text-[#087349] underline underline-offset-2">
+        <button type="button" onClick={() => { window.location.hash = '#/13' }} className="font-bold text-[#087349] underline underline-offset-2">
           로그인
         </button>
       </p>

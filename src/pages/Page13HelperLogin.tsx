@@ -72,6 +72,7 @@ export function Page13HelperLogin() {
         </button>
         <button
           type="button"
+          onClick={() => { window.location.hash = '#/14' }}
           className="h-[56px] w-full rounded-[16px] border-2 border-[#cadfca] bg-white text-[20px] font-bold text-[#087349] transition-transform hover:-translate-y-0.5"
         >
           회원가입
