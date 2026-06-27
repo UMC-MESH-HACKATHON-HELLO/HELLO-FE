@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import { text } from './pageTypes'
 
@@ -15,7 +16,7 @@ export function Page15ElderReview() {
     >
       {/* Top Bar */}
       <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-        <span>{text.appName}</span>
+        <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
         <span>{text.elder}</span>
       </header>
 

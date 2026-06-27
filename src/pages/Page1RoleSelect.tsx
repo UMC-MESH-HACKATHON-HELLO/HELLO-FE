@@ -15,8 +15,10 @@ const page: PageConfig = {
   path: '/1',
   code: 'S0',
   title: '역할 선택',
+  hideTopBar: true,
   topGap: 'h-[84px]',
   heading: text.appName,
+  headingImage: true,
   subheading: '어떤 분이신가요?',
   buttons: [
     { label: '도움이 필요해요', tone: 'primary', width: 'w-[326px]', height: 'h-[152px]', onClick: () => checkMicAndNavigate('/3', '/2') },

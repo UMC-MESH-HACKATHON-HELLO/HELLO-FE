@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import microphoneIcon from '../assets/free-icon-microphone-black-shape-25682.png'
+import logoImage from '../assets/여보세요_로고.png'
 import peopleImage from '../assets/people.png'
 import xImage from '../assets/X.png'
 import type { ActionButton as ActionButtonConfig, ButtonTone, IllustrationType, PageConfig, ToggleConfig } from '../pages/pageTypes'
@@ -14,7 +15,7 @@ export function ProductionPage({ page }: { page: PageConfig }) {
       aria-label={`${page.code} ${page.title}`}
       className="h-[844px] w-[390px] overflow-hidden rounded-[38px] border-[1.4px] border-[#cadfca] bg-[#fffffc] px-6 py-6 text-center shadow-[0_20px_38px_-8px_rgba(10,31,18,0.18)]"
     >
-      <TopBar role={page.role} />
+      <TopBar role={page.role} hide={page.hideTopBar} />
       <div className={page.topGap} />
       {page.illustration && (
         <Illustration
@@ -87,16 +88,21 @@ function useElapsedTimer(isRunning = false) {
   return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
 }
 
-function TopBar({ role }: { role?: string }) {
+function TopBar({ role, hide }: { role?: string; hide?: boolean }) {
+  if (hide) return null
   return (
     <header className="flex h-[34px] w-[342px] items-center justify-between text-2xl font-bold leading-[1.2] text-[#10251b]">
-      <span>{text.appName}</span>
+      <img src={logoImage} alt={text.appName} className="h-[44px] w-auto" />
       <span>{role ?? ''}</span>
     </header>
   )
 }
 
 function Heading({ page }: { page: PageConfig }) {
+  if (page.headingImage) {
+    return <img src={logoImage} alt={page.heading ?? text.appName} className="relative -top-8 mx-auto h-[164px] w-auto" />
+  }
+
   if (page.headingLines) {
     return (
       <h1 className="mx-auto w-[342px] text-[38.4px] font-bold leading-[1.28] text-[#071b11]">

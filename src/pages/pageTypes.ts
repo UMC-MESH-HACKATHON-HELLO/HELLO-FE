@@ -22,12 +22,14 @@ export type PageConfig = {
   code: string
   title: string
   role?: string
+  hideTopBar?: boolean
   topGap: string
   illustration?: IllustrationType
   avatarLabel?: string
   avatarImage?: boolean
   emptyImage?: boolean
   heading?: string
+  headingImage?: boolean
   headingLines?: string[]
   subheading?: string
   subheadingTone?: 'default' | 'green'
