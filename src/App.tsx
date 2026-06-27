@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { ReactElement } from 'react'
 import microphoneIcon from './assets/free-icon-microphone-black-shape-25682.png'
+import peopleImage from './assets/people.png'
 
 type ButtonTone = 'primary' | 'helper' | 'secondary' | 'danger'
 type IllustrationType = 'permission' | 'loader' | 'empty' | 'avatar'
@@ -20,6 +21,7 @@ type PageConfig = {
   topGap: string
   illustration?: IllustrationType
   avatarLabel?: string
+  avatarImage?: boolean
   heading?: string
   headingLines?: string[]
   subheading?: string
@@ -122,6 +124,7 @@ const pages: PageConfig[] = [
     topGap: 'h-[71px]',
     illustration: 'avatar',
     avatarLabel: text.helper,
+    avatarImage: true,
     heading: text.helper,
     subheading: '\uC5F0\uACB0\uB410\uC5B4\uC694 \u00B7 \uB9D0\uC500\uD558\uC138\uC694',
     subheadingTone: 'green',
@@ -173,6 +176,7 @@ const pages: PageConfig[] = [
     topGap: 'h-[77px]',
     illustration: 'avatar',
     avatarLabel: text.elder,
+    avatarImage: true,
     heading: text.elder,
     runningTimer: true,
     status: '\uB9C8\uC774\uD06C \uCF1C\uC9D0',
@@ -227,7 +231,9 @@ function ProductionPage({ page }: { page: PageConfig }) {
     >
       <TopBar role={page.role} />
       <div className={page.topGap} />
-      {page.illustration && <Illustration type={page.illustration} label={page.avatarLabel} />}
+      {page.illustration && (
+        <Illustration type={page.illustration} label={page.avatarLabel} usePeopleImage={page.avatarImage} />
+      )}
       {page.illustration && <div className="h-[22px]" />}
       <Heading page={page} />
       {page.subheading && (
@@ -346,7 +352,15 @@ function SegmentedControl() {
   )
 }
 
-function Illustration({ type, label }: { type: IllustrationType; label?: string }) {
+function Illustration({
+  type,
+  label,
+  usePeopleImage = false,
+}: {
+  type: IllustrationType
+  label?: string
+  usePeopleImage?: boolean
+}) {
   if (type === 'permission') {
     return (
       <div className="mx-auto flex h-[108px] w-[260px] items-center justify-center">
@@ -373,10 +387,9 @@ function Illustration({ type, label }: { type: IllustrationType; label?: string 
   }
 
   return (
-    <div
-      aria-label={label}
-      className="mx-auto h-[108px] w-[108px] rounded-full border border-[#d2ead5] bg-[#e1f4e7]"
-    />
+    <div aria-label={label} className="mx-auto h-[108px] w-[108px] overflow-hidden rounded-full bg-[#e1f4e7]">
+      {usePeopleImage && <img src={peopleImage} alt="" className="h-full w-full object-cover" />}
+    </div>
   )
 }
 
