@@ -1,0 +1,465 @@
+﻿=== domain/matching/application/MatchingService.java ===
+package com.mesh.hello.domain.matching.application;
+
+import com.mesh.hello.domain.matching.domain.MatchingRoom;
+import com.mesh.hello.domain.matching.repository.MatchingQueueRepository;
+import com.mesh.hello.domain.matching.repository.MatchingRoomRepository;
+import com.mesh.hello.global.common.response.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Service;
+
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class MatchingService {
+
+    private final MatchingQueueRepository matchingQueueRepository;
+    private final MatchingRoomRepository matchingRoomRepository;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final LiveKitService liveKitService;
+
+    /**
+     * 도움 요청자(helpee)가 매칭을 요청한다.
+     * 대기 중인 도우미(helper)가 있으면 즉시 매칭해 양측에 MATCHED + LiveKit 토큰을 전송한다.
+     * 도우미가 없으면 helpee를 대기열에 넣고 NO_HELPER를 전송한다.
+     */
+    public void requestMatch(String helpeeSessionId) {
+        Optional<String> helperOpt = matchingQueueRepository.popWaitingHelper();
+
+        if (helperOpt.isEmpty()) {
+            matchingQueueRepository.pushHelpee(helpeeSessionId);
+            messagingTemplate.convertAndSendToUser(
+                    helpeeSessionId, "/queue/signal",
+                    ApiResponse.ok("대기 중인 도우미가 없습니다.", Map.of("type", "NO_HELPER"))
+            );
+            return;
+        }
+
+        String helperSessionId = helperOpt.get();
+        String roomId = UUID.randomUUID().toString();
+
+        try {
+            String helpeeToken = liveKitService.createToken(roomId, helpeeSessionId);
+            String helperToken = liveKitService.createToken(roomId, helperSessionId);
+
+            MatchingRoom room = new MatchingRoom(roomId, helpeeSessionId, helperSessionId);
+            matchingRoomRepository.save(room);
+
+            messagingTemplate.convertAndSendToUser(
+                    helpeeSessionId, "/queue/signal",
+                    ApiResponse.ok("매칭에 성공했습니다.",
+                            Map.of("type", "MATCHED", "roomId", roomId, "token", helpeeToken))
+            );
+            messagingTemplate.convertAndSendToUser(
+                    helperSessionId, "/queue/signal",
+                    ApiResponse.ok("매칭에 성공했습니다.",
+                            Map.of("type", "MATCHED", "roomId", roomId, "token", helperToken))
+            );
+
+        } catch (Exception e) {
+            // 토큰 발급 실패 시 도우미 다시 큐에 넣고 helpee에게 실패 알림
+            matchingQueueRepository.pushHelper(helperSessionId);
+            messagingTemplate.convertAndSendToUser(
+                    helpeeSessionId, "/queue/signal",
+                    ApiResponse.ok("대기 중인 도우미가 없습니다.", Map.of("type", "NO_HELPER"))
+            );
+        }
+    }
+
+    /**
+     * 도우미(helper)가 대기열에 등록된다.
+     * 대기 중인 도움 요청자(helpee)가 있으면 즉시 매칭을 시도한다.
+     */
+    public void registerHelper(String helperSessionId) {
+        Optional<String> helpeeOpt = matchingQueueRepository.popWaitingHelpee();
+
+        if (helpeeOpt.isEmpty()) {
+            matchingQueueRepository.pushHelper(helperSessionId);
+            messagingTemplate.convertAndSendToUser(
+                    helperSessionId, "/queue/signal",
+                    ApiResponse.ok("대기열에 등록되었습니다.", Map.of("type", "WAITING"))
+            );
+            return;
+        }
+
+        String helpeeSessionId = helpeeOpt.get();
+        String roomId = UUID.randomUUID().toString();
+
+        try {
+            String helpeeToken = liveKitService.createToken(roomId, helpeeSessionId);
+            String helperToken = liveKitService.createToken(roomId, helperSessionId);
+
+            MatchingRoom room = new MatchingRoom(roomId, helpeeSessionId, helperSessionId);
+            matchingRoomRepository.save(room);
+
+            messagingTemplate.convertAndSendToUser(
+                    helpeeSessionId, "/queue/signal",
+                    ApiResponse.ok("매칭에 성공했습니다.",
+                            Map.of("type", "MATCHED", "roomId", roomId, "token", helpeeToken))
+            );
+            messagingTemplate.convertAndSendToUser(
+                    helperSessionId, "/queue/signal",
+                    ApiResponse.ok("매칭에 성공했습니다.",
+                            Map.of("type", "MATCHED", "roomId", roomId, "token", helperToken))
+            );
+
+        } catch (Exception e) {
+            matchingQueueRepository.pushHelpee(helpeeSessionId);
+            matchingQueueRepository.pushHelper(helperSessionId);
+        }
+    }
+
+    /**
+     * 통화를 정상 종료한다. 방에 있는 양측 모두에게 ENDED를 전송하고 방을 삭제한다.
+     */
+    public void endCall(String sessionId, String roomId) {
+        messagingTemplate.convertAndSend(
+                "/topic/room/" + roomId,
+                (Object) ApiResponse.ok("통화가 종료되었습니다.", Map.of("type", "ENDED"))
+        );
+        matchingRoomRepository.deleteByRoomId(roomId);
+    }
+
+    /**
+     * 세션 연결이 끊겼을 때 정리 작업을 수행한다.
+     * 대기열에서 제거하고, 통화 중이었다면 상대방에게 PARTNER_DISCONNECTED를 전송한다.
+     */
+    public void handleDisconnect(String sessionId) {
+        matchingQueueRepository.removeHelper(sessionId);
+        matchingQueueRepository.removeHelpee(sessionId);
+
+        matchingRoomRepository.findBySessionId(sessionId).ifPresent(room -> {
+            room.counterpartOf(sessionId).ifPresent(counterpart ->
+                    messagingTemplate.convertAndSendToUser(
+                            counterpart, "/queue/signal",
+                            ApiResponse.ok("상대방의 연결이 종료되었습니다.", Map.of("type", "PARTNER_DISCONNECTED"))
+                    )
+            );
+            matchingRoomRepository.deleteByRoomId(room.getRoomId());
+        });
+    }
+}
+
+=== domain/matching/controller/SignalingController.java ===
+package com.mesh.hello.domain.matching.controller;
+
+import com.mesh.hello.domain.matching.application.MatchingService;
+import com.mesh.hello.domain.matching.dto.SignalMessage;
+import com.mesh.hello.global.common.response.ApiResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.handler.annotation.DestinationVariable;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
+
+@Controller
+@RequiredArgsConstructor
+public class SignalingController {
+    private final MatchingService matchingService;
+    private final SimpMessagingTemplate messagingTemplate;
+
+    // 도우미 대기열 등록 → 대기 중인 helpee 있으면 즉시 매칭
+    @MessageMapping("/help/register")
+    public void helperRegister(Principal principal) {
+        matchingService.registerHelper(principal.getName());
+    }
+
+    // 어르신 도움 요청 → 매칭 시도
+    @MessageMapping("/help/request")
+    public void helpRequest(Principal principal) {
+        matchingService.requestMatch(principal.getName());
+    }
+
+    // 통화 종료
+    @MessageMapping("/call/end")
+    public void callEnd(Principal principal, SignalMessage msg) {
+        matchingService.endCall(principal.getName(), msg.getRoomId());
+    }
+
+    // WebRTC 시그널링 중계 (SDP/ICE)
+    @MessageMapping("/signal/{roomId}")
+    public void signal(@DestinationVariable String roomId, SignalMessage msg) {
+        messagingTemplate.convertAndSend("/topic/room/" + roomId, ApiResponse.ok("시그널을 중계합니다.", msg));
+    }
+}
+
+
+=== domain/matching/dto/SignalMessage.java ===
+package com.mesh.hello.domain.matching.dto;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+
+@Getter
+@Setter
+@NoArgsConstructor
+public class SignalMessage {
+    private String type;
+    private String sessionId;
+    private String roomId;
+    private Object payload;
+}
+
+
+=== domain/user/api/UserController.java ===
+package com.mesh.hello.domain.user.api;
+
+import com.mesh.hello.domain.user.dto.SessionReqDTO;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.AuthorityUtils;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+public class UserController {
+
+    @PostMapping("/session")
+    public Map<String, String> getSession(
+            @RequestBody SessionReqDTO.GetSession roleRequest,
+            HttpServletRequest request
+    ) {
+        // DTO에서 role 값을 꺼냅니다.
+        String role = roleRequest.role().toString();
+
+        // 1. 권한(Role) 목록 생성
+        List<GrantedAuthority> authorities = AuthorityUtils.createAuthorityList(role);
+
+        // 2. 커스텀 익명 인증 토큰 생성
+        AnonymousAuthenticationToken customAnonymousToken = new AnonymousAuthenticationToken(
+                "key_for_anonymous",
+                "anonymousUser_" + role.toLowerCase(),
+                authorities
+        );
+
+        // 3. SecurityContext에 저장
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(customAnonymousToken);
+        SecurityContextHolder.setContext(context);
+
+        // 4. 톰캣 HTTP 세션에 저장
+        HttpSession session = request.getSession(true);
+        session.setAttribute("SPRING_SECURITY_CONTEXT", context);
+
+        return Map.of("sessionId", session.getId());
+    }
+
+    @PostMapping("/call/end")
+    public Map<String, String> endSession(
+            HttpServletRequest request
+    ) {
+        HttpSession session = request.getSession(false);
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        SecurityContextHolder.clearContext();
+
+        return Map.of("status", "success");
+    }
+}
+
+
+=== domain/user/dto/SessionReqDTO.java ===
+package com.mesh.hello.domain.user.dto;
+
+import com.mesh.hello.domain.user.enums.UserRole;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+
+public class SessionReqDTO {
+    public record GetSession(
+            UserRole role
+    ) {}
+}
+
+
+=== domain/user/dto/SessionResDTO.java ===
+package com.mesh.hello.domain.user.dto;
+
+import java.time.LocalDateTime;
+
+public class SessionResDTO {
+    public record GetSession(
+            String sessionId,
+            LocalDateTime createdAt
+    ) {}
+}
+
+
+=== domain/auth/controller/AuthController.java ===
+package com.mesh.hello.domain.auth.controller;
+
+import com.mesh.hello.domain.auth.application.AuthService;
+import com.mesh.hello.domain.auth.dto.LoginRequest;
+import com.mesh.hello.domain.auth.dto.LoginResponse;
+import com.mesh.hello.domain.auth.dto.SignupRequest;
+import com.mesh.hello.global.common.response.ApiResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
+
+@Tag(name = "Auth", description = "인증 API")
+@RestController
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+
+    @Operation(summary = "로그인", description = "username/password로 로그인합니다. 인증은 JSESSIONID 쿠키로 유지됩니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그인 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "401", description = "인증 실패")
+    })
+    @PostMapping("/login")
+    public ApiResponse<LoginResponse> login(@RequestBody LoginRequest request,
+                                            HttpServletRequest httpRequest,
+                                            HttpServletResponse httpResponse) {
+        return ApiResponse.ok("로그인에 성공했습니다.", authService.login(request, httpRequest, httpResponse));
+    }
+
+    @Operation(summary = "로그아웃", description = "현재 세션을 만료시킵니다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "로그아웃 성공")
+    @PostMapping("/logout")
+    public ApiResponse<Void> logout(HttpServletRequest httpRequest) {
+        authService.logout(httpRequest);
+        return ApiResponse.ok("로그아웃되었습니다.", null);
+    }
+
+    @Operation(summary = "회원가입", description = "username/password/nickname으로 계정을 생성합니다.")
+    @ApiResponses({
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200", description = "회원가입 성공"),
+        @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "400", description = "중복 username")
+    })
+    @PostMapping("/signup")
+    public ApiResponse<Long> signup(@RequestBody SignupRequest request) {
+        return ApiResponse.ok("회원가입이 완료되었습니다.", authService.signup(request));
+    }
+}
+
+
+=== domain/auth/dto/LoginRequest.java ===
+package com.mesh.hello.domain.auth.dto;
+
+/**
+ * 로그인 요청. 프론트에서 평문 username/password를 받는다(HTTPS 전제).
+ */
+public record LoginRequest(String username, String password) {
+}
+
+
+=== domain/auth/dto/SignupRequest.java ===
+package com.mesh.hello.domain.auth.dto;
+
+/**
+ * 회원가입 요청(최소 버전). nickname은 선택.
+ */
+public record SignupRequest(String username, String password, String nickname) {
+}
+
+
+=== global/websocket/config/WebSocketMessageBrokerConfig.java ===
+package com.mesh.hello.global.websocket.config;
+
+import com.mesh.hello.global.websocket.interceptor.AnonymousPrincipalChannelInterceptor;
+import com.mesh.hello.global.websocket.interceptor.SessionIdHandshakeInterceptor;
+import com.mesh.hello.global.websocket.interceptor.ShutdownAwareHandshakeInterceptor;
+import com.mesh.hello.global.websocket.interceptor.WebSocketRateLimitInterceptor;
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
+import org.springframework.messaging.simp.config.MessageBrokerRegistry;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
+import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
+import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
+import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+
+/**
+ * 무인증 익명 WebSocket·STOMP 연결 계층 설정.
+ *
+ * <p>참고코드(회원 인증 + Micrometer/Observation + metric/outbound executor)에서
+ * 인증·메트릭·관측 관련 요소를 모두 제거하고, 익명 연결에 필요한 최소 구성만 남겼다.</p>
+ *
+ * <ul>
+ *   <li>엔드포인트 {@code /ws} (SockJS) + 핸드셰이크 인터셉터 2종(종료거부, sessionId 확정)</li>
+ *   <li>심플 브로커 {@code /topic}, {@code /queue} + heartbeat 4000/4000 + 전용 TaskScheduler</li>
+ *   <li>애플리케이션 prefix {@code /app}</li>
+ *   <li>인바운드 채널 인터셉터: 익명 Principal 등록 → rate limit</li>
+ * </ul>
+ */
+@Configuration
+@EnableWebSocketMessageBroker
+@RequiredArgsConstructor
+public class WebSocketMessageBrokerConfig implements WebSocketMessageBrokerConfigurer {
+
+    private final SessionIdHandshakeInterceptor sessionIdHandshakeInterceptor;
+    private final ShutdownAwareHandshakeInterceptor shutdownAwareHandshakeInterceptor;
+    private final AnonymousPrincipalChannelInterceptor anonymousPrincipalChannelInterceptor;
+    private final WebSocketRateLimitInterceptor webSocketRateLimitInterceptor;
+
+    /** 심플 브로커 heartbeat 전용 스케줄러. */
+    @Bean
+    public ThreadPoolTaskScheduler webSocketHeartbeatScheduler() {
+        ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
+        scheduler.setPoolSize(1);
+        scheduler.setThreadNamePrefix("ws-heartbeat-");
+        return scheduler;
+    }
+
+    @Override
+    public void registerStompEndpoints(StompEndpointRegistry registry) {
+        registry.addEndpoint("/ws")
+            .addInterceptors(shutdownAwareHandshakeInterceptor, sessionIdHandshakeInterceptor)
+            .withSockJS();
+    }
+
+    @Override
+    public void configureMessageBroker(MessageBrokerRegistry registry) {
+        registry.enableSimpleBroker("/topic", "/queue")
+            .setHeartbeatValue(new long[]{4000, 4000})
+            .setTaskScheduler(webSocketHeartbeatScheduler());
+        registry.setApplicationDestinationPrefixes("/app");
+    }
+
+    @Override
+    public void configureClientInboundChannel(ChannelRegistration registration) {
+        // 순서 중요: Principal 등록(CONNECT) → rate limit(SEND).
+        registration.interceptors(
+            anonymousPrincipalChannelInterceptor,
+            webSocketRateLimitInterceptor
+        );
+    }
+}
+
+
+
